@@ -25,7 +25,7 @@ cd native
 open build/Thread.app
 ```
 
-Thread runs as a menu bar accessory with no Dock icon; quit it from its menu bar item. Tasks are saved to `~/Library/Application Support/Thread/state.json`.
+Thread runs as a menu bar accessory with no Dock icon; quit it from its menu bar item. The side panel tucks into the right edge of the screen like an auto-hiding Dock: rest the pointer on the edge to slide it out, and pin it from the panel or the menu bar item to keep it open. Tasks are saved to `~/Library/Application Support/Thread/state.json`.
 
 | Path | Purpose |
 | --- | --- |
@@ -35,7 +35,7 @@ Thread runs as a menu bar accessory with no Dock icon; quit it from its menu bar
 | `Sources/Thread/Notch` | Notch geometry detection and the Live Focus island |
 | `Sources/Thread/Support` | Floating window class and text formatting |
 
-The side panel uses the system Liquid Glass material. The island reads the notch position from `NSScreen` at run time, so it fits whichever MacBook it runs on; on a display without a notch it hangs from the top centre of the menu bar.
+The side panel uses a frosted system material that blurs what is behind the window, with an experimental Liquid Glass option in the menu bar item. The island reads the notch position from `NSScreen` at run time, so it fits whichever MacBook it runs on; on a display without a notch it hangs from the top centre of the menu bar.
 
 The build is ad-hoc signed, so it runs on the Mac that built it but is not ready to distribute.
 

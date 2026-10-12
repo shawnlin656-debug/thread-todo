@@ -1,132 +1,113 @@
 import SwiftUI
 
-/// Root of the side panel: either the full panel or, when collapsed, the rail.
+/// The side panel and the handle it leaves behind when tucked away.
 ///
-/// Glass is used once, for the floating surface itself. Everything inside stays flat,
-/// following Apple's guidance not to layer Liquid Glass on Liquid Glass.
+/// Controls and type come from the system (bordered buttons, rounded text field, text
+/// styles, SF Symbols) so the panel reads as part of macOS and follows its appearance,
+/// accent colour and accessibility settings.
 struct SidePanelView: View {
+    enum Metrics {
+        static let panelWidth: CGFloat = 340
+        /// Gap between the open panel and the screen edges.
+        static let margin: CGFloat = 10
+        static let cornerRadius: CGFloat = 22
+        /// Extra transparent room on the left so the shadow is not clipped.
+        static let shadowRoom: CGFloat = 40
+        static let windowWidth = panelWidth + margin + shadowRoom
+    }
+
     @Environment(TaskStore.self) private var store
+    @Environment(PanelPresentation.self) private var presentation
 
     var body: some View {
-        if store.isCollapsed {
-            CollapsedRail()
-        } else {
-            VStack(spacing: 0) {
-                header
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
-                        CurrentTaskSection()
-                        ReturnPathSection()
-                        QueueSection()
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 18)
+        ZStack(alignment: .trailing) {
+            EdgeHandle()
+                .opacity(presentation.isOpen ? 0 : 1)
+                .onHover { if $0 { presentation.open() } }
+
+            panel
+                .padding(Metrics.margin)
+                // Tucked away, the panel sits just past the screen edge.
+                .offset(x: presentation.isOpen ? 0 : Metrics.panelWidth + Metrics.margin + Metrics.shadowRoom)
+                .opacity(presentation.isOpen ? 1 : 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+        .animation(.smooth(duration: 0.4), value: presentation.isOpen)
+    }
+
+    private var panel: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    CurrentTaskSection()
+                    Divider()
+                    ReturnPathSection()
+                    Divider()
+                    QueueSection()
                 }
-                .scrollIndicators(.never)
-                QuickAddBar()
+                .padding(16)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .glassEffect(.regular, in: .rect(cornerRadius: 24))
-        }
-    }
+            .scrollIndicators(.never)
 
-    private var header: some View {
-        HStack(spacing: 11) {
-            AppIcon(size: 32)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Thread").font(.system(size: 14, weight: .semibold))
-                Text("保持工作连续").font(.system(size: 11)).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button {
-                store.isCollapsed = true
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .frame(width: 32, height: 32)
-                    .contentShape(.circle)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .help("收起面板")
-            .accessibilityLabel("收起面板")
+            Divider()
+            QuickAddBar()
         }
-        .padding(.leading, 18)
-        .padding(.trailing, 12)
-        .frame(height: 62)
+        .frame(width: Metrics.panelWidth)
+        .frame(maxHeight: .infinity)
+        .background { PanelBackground(cornerRadius: Metrics.cornerRadius) }
+        .clipShape(.rect(cornerRadius: Metrics.cornerRadius, style: .continuous))
+        .contentShape(.rect(cornerRadius: Metrics.cornerRadius, style: .continuous))
+        .onHover { presentation.pointerInside($0) }
     }
 }
 
-/// The panel reduced to a strip at the screen edge. Shows how many tasks are in play.
-struct CollapsedRail: View {
+/// The sliver left at the screen edge while the panel is tucked away. Its colour shows
+/// at a glance whether a task is in focus.
+private struct EdgeHandle: View {
     @Environment(TaskStore.self) private var store
 
     var body: some View {
-        Button {
-            store.isCollapsed = false
-        } label: {
-            VStack {
-                AppIcon(size: 30)
-                Spacer()
-                Text("\(store.interrupted.count + (store.current == nil ? 0 : 1))")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 22, height: 22)
-                    .background(Color.accentColor, in: .circle)
-            }
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .glassEffect(.regular, in: .rect(cornerRadius: 24))
-        .help("展开 Thread 面板")
-        .accessibilityLabel("展开 Thread 面板")
+        Capsule()
+            .fill(store.current == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
+            .frame(width: 5, height: 64)
+            .padding(.vertical, 28)
+            .padding(.leading, 9)
+            .padding(.trailing, 3)
+            .background { PanelBackground(cornerRadius: 8.5) }
+            .accessibilityLabel("显示 Thread 面板")
     }
 }
 
-/// The app mark: a ring with a hand leaving it, on the system accent gradient.
-struct AppIcon: View {
-    let size: CGFloat
-
-    var body: some View {
-        Image(systemName: "arrow.uturn.backward")
-            .font(.system(size: size * 0.44, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(width: size, height: size)
-            .background(Color.accentColor.gradient, in: .rect(cornerRadius: size * 0.25))
-            .accessibilityHidden(true)
-    }
-}
-
-/// Heading above each list: a title on the left and an optional detail or action on the right.
+/// Heading above each list, in the style of a sidebar section header.
 struct SectionHeading<Trailing: View>: View {
     let title: String
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
-        HStack {
-            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+        HStack(alignment: .firstTextBaseline) {
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
             Spacer()
-            trailing.font(.system(size: 11)).foregroundStyle(.secondary)
+            trailing.font(.caption).foregroundStyle(.secondary)
         }
-        .frame(minHeight: 20)
     }
 }
 
-/// Capsule button used for the two actions on the current task.
-struct CapsuleActionStyle: ButtonStyle {
-    var prominent = false
-    @Environment(\.isEnabled) private var isEnabled
+/// Rounded highlight behind a list row while the pointer is over it, as in system lists and menus.
+struct RowHover: ViewModifier {
+    @State private var isHovered = false
 
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
-            .frame(maxWidth: .infinity, minHeight: 36)
-            .background(prominent ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary), in: .capsule)
-            .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.45)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(.primary.opacity(isHovered ? 0.08 : 0), in: .rect(cornerRadius: 8))
+            .contentShape(.rect)
+            .onHover { isHovered = $0 }
+            // Let the highlight reach past the text so rows align with the section headings.
+            .padding(.horizontal, -8)
     }
+}
+
+extension View {
+    func rowHover() -> some View { modifier(RowHover()) }
 }

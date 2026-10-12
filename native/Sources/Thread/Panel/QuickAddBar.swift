@@ -5,55 +5,36 @@ import SwiftUI
 /// the current one; Shift-Return queues it for later.
 struct QuickAddBar: View {
     @Environment(TaskStore.self) private var store
+    @Environment(PanelPresentation.self) private var presentation
     @State private var title = ""
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 7) {
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 30, height: 30)
+        VStack(alignment: .leading, spacing: 6) {
+            // `onSubmit` rather than a key handler: it only fires after an input method
+            // has committed its text, so confirming a Chinese candidate never submits.
+            TextField("插入临时任务", text: $title)
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.large)
+                .focused($isFocused)
+                .onSubmit(submit)
+                // Escape hands the keyboard back and lets the panel tuck away again.
+                .onExitCommand { isFocused = false }
 
-                // `onSubmit` rather than a key handler: it only fires after an input method
-                // has committed its text, so confirming a Chinese candidate never submits.
-                TextField("插入临时任务", text: $title)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12.5))
-                    .focused($isFocused)
-                    .onSubmit(submit)
-
-                Button("插队", action: submit)
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .frame(height: 34)
-                    .background(Color.accentColor, in: .capsule)
-                    .opacity(trimmedTitle.isEmpty ? 0.5 : 1)
-                    .disabled(trimmedTitle.isEmpty)
-            }
-            .padding(EdgeInsets(top: 4, leading: 7, bottom: 4, trailing: 5))
-            .background(.quaternary, in: .capsule)
-            .overlay { Capsule().strokeBorder(Color.accentColor, lineWidth: isFocused ? 1.5 : 0) }
-            .contentShape(.capsule)
-            .onTapGesture { isFocused = true }
-
-            Text("↵ 插队，当前任务保留在返回路径 · ⇧↵ 排到接下来")
-                .font(.system(size: 11))
+            Text("↩ 立即开始，当前任务进入返回路径　⇧↩ 排到接下来")
+                .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
         }
-        .padding(EdgeInsets(top: 10, leading: 14, bottom: 13, trailing: 14))
-    }
-
-    private var trimmedTitle: String {
-        title.trimmingCharacters(in: .whitespacesAndNewlines)
+        .padding(EdgeInsets(top: 12, leading: 16, bottom: 14, trailing: 16))
+        // Keep the panel open for as long as the user is typing in it.
+        .onChange(of: isFocused) { presentation.isEditing = isFocused }
+        .onChange(of: presentation.isWindowKey) {
+            if !presentation.isWindowKey { isFocused = false }
+        }
     }
 
     private func submit() {
-        let newTitle = trimmedTitle
+        let newTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !newTitle.isEmpty else { return }
         title = ""
         if NSEvent.modifierFlags.contains(.shift) {

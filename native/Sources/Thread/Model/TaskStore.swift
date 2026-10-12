@@ -15,8 +15,8 @@ final class TaskStore {
     private(set) var queue: [TaskItem] = []
     /// Tasks completed and not yet cleared.
     private(set) var done: [TaskItem] = []
-    /// Whether the side panel is reduced to its rail.
-    var isCollapsed = false { didSet { save() } }
+    /// Whether the side panel stays open instead of tucking into the screen edge.
+    var isPinned = false { didSet { save() } }
 
     /// Start of the current uninterrupted run; `nil` when idle.
     private(set) var runningSince: Date?
@@ -137,7 +137,8 @@ final class TaskStore {
         var interrupted: [TaskItem]
         var queue: [TaskItem]
         var done: [TaskItem]
-        var isCollapsed: Bool
+        /// Optional so files written before pinning existed still load.
+        var isPinned: Bool?
     }
 
     /// `~/Library/Application Support/Thread/state.json`, unless `THREAD_STATE_FILE` points
@@ -157,7 +158,7 @@ final class TaskStore {
         // Bank the run in progress into the snapshot only; the live state keeps counting from `runningSince`.
         var running = current
         running?.accumulated = elapsed()
-        let snapshot = Snapshot(current: running, interrupted: interrupted, queue: queue, done: done, isCollapsed: isCollapsed)
+        let snapshot = Snapshot(current: running, interrupted: interrupted, queue: queue, done: done, isPinned: isPinned)
 
         do {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -180,7 +181,7 @@ final class TaskStore {
             interrupted = snapshot.interrupted
             queue = snapshot.queue
             done = snapshot.done
-            isCollapsed = snapshot.isCollapsed
+            isPinned = snapshot.isPinned ?? false
             // Time the app spent closed is not focus time: the clock restarts from launch.
             runningSince = current == nil ? nil : .now
         } catch {

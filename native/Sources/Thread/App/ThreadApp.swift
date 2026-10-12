@@ -6,12 +6,13 @@ import SwiftUI
 @main
 struct ThreadApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+    @AppStorage(PanelBackground.liquidGlassKey) private var useLiquidGlass = false
 
     var body: some Scene {
         MenuBarExtra("Thread", systemImage: "arrow.uturn.backward.circle") {
-            Button(delegate.store.isCollapsed ? "展开面板" : "收起面板") {
-                delegate.store.isCollapsed.toggle()
-            }
+            Toggle("固定面板", isOn: Bindable(delegate.store).isPinned)
+            // The two materials look different depending on what is behind the panel; let the user pick.
+            Toggle("Liquid Glass 材质（实验）", isOn: $useLiquidGlass)
             Divider()
             Button("退出 Thread") { NSApp.terminate(nil) }
                 .keyboardShortcut("q")

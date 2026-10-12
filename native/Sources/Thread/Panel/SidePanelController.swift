@@ -1,54 +1,63 @@
 import AppKit
 import SwiftUI
 
-/// Places the side panel against the right edge of the screen and swaps its frame
-/// between the full panel and the collapsed rail.
+/// Hosts the side panel in a transparent window along the right edge of the screen and
+/// watches for the pointer touching that edge.
+///
+/// The window always covers the panel's open footprint; the panel slides in and out
+/// inside it, so there is no window resizing to fight the animation.
 final class SidePanelController {
-    private enum Metrics {
-        static let panelWidth: CGFloat = 384
-        static let railSize = CGSize(width: 48, height: 154)
-        /// Gap between the panel and the screen edges.
-        static let margin: CGFloat = 12
-        /// Transparent border inside the window so the glass shadow is not clipped.
-        static let shadowInset: CGFloat = 24
-    }
-
-    private let store: TaskStore
     private let panel: FloatingPanel
+    private let presentation: PanelPresentation
+    private var monitors: [Any] = []
 
     init(store: TaskStore) {
-        self.store = store
+        presentation = PanelPresentation(store: store)
         panel = FloatingPanel(
             level: .floating,
             content: SidePanelView()
-                .padding(Metrics.shadowInset)
                 .environment(store)
+                .environment(presentation)
         )
+        layout()
         panel.orderFrontRegardless()
 
-        observe { [weak self] in self?.layout(animated: true) }
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.layout(animated: false) }
+            MainActor.assumeIsolated { self?.layout() }
+        }
+
+        for (name, isKey) in [(NSWindow.didBecomeKeyNotification, true), (NSWindow.didResignKeyNotification, false)] {
+            NotificationCenter.default.addObserver(forName: name, object: panel, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.presentation.isWindowKey = isKey }
+            }
+        }
+
+        // Pointer position is needed even while other apps are active, hence the global monitor;
+        // the local one covers the moments when this panel is the key window.
+        let track: (NSEvent) -> Void = { [weak self] _ in self?.trackPointer() }
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged], handler: track) {
+            monitors.append(global)
+        }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved], handler: { event in track(event); return event }) {
+            monitors.append(local)
         }
     }
 
-    /// Fit the window to the current mode within the screen's usable area (below the
-    /// menu bar, clear of the Dock).
-    private func layout(animated: Bool) {
+    /// Pin the window to the right edge, spanning the usable height (below the menu bar, above the Dock).
+    private func layout() {
         guard let screen = panel.screen ?? NSScreen.main else { return }
-        let area = screen.visibleFrame.insetBy(dx: Metrics.margin, dy: Metrics.margin)
+        let area = screen.visibleFrame
+        let width = SidePanelView.Metrics.windowWidth
+        panel.setFrame(NSRect(x: area.maxX - width, y: area.minY, width: width, height: area.height), display: true)
+    }
 
-        let content: NSRect
-        if store.isCollapsed {
-            let size = Metrics.railSize
-            content = NSRect(x: area.maxX - size.width, y: area.midY - size.height / 2, width: size.width, height: size.height)
-        } else {
-            content = NSRect(x: area.maxX - Metrics.panelWidth, y: area.minY, width: Metrics.panelWidth, height: area.height)
-        }
-
-        let frame = content.insetBy(dx: -Metrics.shadowInset, dy: -Metrics.shadowInset)
-        panel.setFrame(frame, display: true, animate: animated && panel.frame != .zero)
+    /// Report whether the pointer is resting against the panel's screen edge.
+    private func trackPointer() {
+        guard let screen = panel.screen else { return }
+        let pointer = NSEvent.mouseLocation
+        let area = screen.visibleFrame
+        presentation.pointerAtEdge(pointer.x >= screen.frame.maxX - 2 && pointer.y >= area.minY && pointer.y <= area.maxY)
     }
 }
