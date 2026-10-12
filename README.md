@@ -35,8 +35,9 @@ Thread runs as a menu bar accessory with no Dock icon; quit it from its menu bar
 | `Sources/Thread/App` | App entry point, menu bar item, app delegate |
 | `Sources/Thread/Model` | `TaskItem` and `TaskStore` (state, actions, persistence) |
 | `Sources/Thread/Panel` | The floating side panel and its sections |
+| `Sources/Thread/QuickEntry` | The ⌃⌥Space entry bar and its window |
 | `Sources/Thread/Notch` | Notch geometry detection and the Live Focus island |
-| `Sources/Thread/Support` | Floating window class and text formatting |
+| `Sources/Thread/Support` | Floating window class, global shortcut, time parsing and text formatting |
 
 The side panel uses a frosted system material that blurs what is behind the window, with an experimental Liquid Glass option in the menu bar item. The island reads the notch position from `NSScreen` at run time, so it fits whichever MacBook it runs on; on a display without a notch it hangs from the top centre of the menu bar.
 
