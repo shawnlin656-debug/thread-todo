@@ -39,7 +39,6 @@
  * @property {Task[]} interrupted
  * @property {Task[]} queue
  * @property {Task[]} done
- * @property {boolean} muted
  * @property {boolean} collapsed
  */
 
@@ -109,7 +108,6 @@ function seedState() {
       { id: createId(), title: "整理下周迭代清单", type: "规划", elapsed: 0, estimate: 25, addedAt: now },
     ],
     done: [],
-    muted: false,
     collapsed: false,
   };
 }
@@ -153,7 +151,6 @@ const $ = (selector) => document.querySelector(selector);
 const panel = $("#threadPanel");
 const rail = $("#collapsedRail");
 const railCount = $("#railCount");
-const soundButton = $("#soundButton");
 
 const currentTask = $("#currentTask");
 const currentTitle = $("#currentTitle");
@@ -368,13 +365,11 @@ function peekRow(kind, label, title, meta) {
   `;
 }
 
-/** Panel chrome that mirrors state: collapsed rail, its badge, and the sound toggle. */
+/** Panel chrome that mirrors state: the collapsed rail and its badge. */
 function renderChrome() {
   panel.classList.toggle("is-collapsed", state.collapsed);
   rail.classList.toggle("is-visible", state.collapsed);
   railCount.textContent = state.interrupted.length + (state.current ? 1 : 0);
-  soundButton.classList.toggle("muted", state.muted);
-  soundButton.setAttribute("aria-pressed", String(!state.muted));
 }
 
 /**
@@ -564,12 +559,6 @@ $("#collapseButton").addEventListener("click", () => {
 rail.addEventListener("click", () => {
   state.collapsed = false;
   commit();
-});
-
-soundButton.addEventListener("click", () => {
-  state.muted = !state.muted;
-  commit();
-  showToast(state.muted ? "提示音已关闭" : "提示音已开启", "任务返回提醒仍会显示在屏幕上", state.muted ? "×" : "♪");
 });
 
 /* -------------------------------------------------------------------------- */
