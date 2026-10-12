@@ -80,7 +80,7 @@ struct QuickEntryView: View {
         case .interrupt, .enqueue:
             Text("↩ 立即开始，当前任务保留在返回路径").foregroundStyle(.secondary)
         case nil:
-            Text("写上时间可定时开始：3pm、3:30pm、9am").foregroundStyle(.secondary)
+            Text("写上时间可定时开始：3pm、3:30pm、630pm").foregroundStyle(.secondary)
         }
     }
 
