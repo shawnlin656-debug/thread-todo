@@ -5,7 +5,9 @@ import SwiftUI
 ///
 /// - Return starts the task immediately, interrupting the current one.
 /// - Shift-Return queues it for later.
-/// - A time in the text ("3:00 写周报"), or the clock button, schedules it to take over then.
+/// - A time in the text ("3pm 写周报"), or the clock button, schedules it to take over then.
+///
+/// The ⌃⌥Space quick-entry window reads text by the same rules; see `TaskStore.entry(for:queued:now:)`.
 struct QuickAddBar: View {
     @Environment(TaskStore.self) private var store
     @Environment(PanelPresentation.self) private var presentation
@@ -41,7 +43,7 @@ struct QuickAddBar: View {
                 .popover(isPresented: $isPickingTime, arrowEdge: .top) { timePicker }
             }
 
-            Text("↩ 立即开始　⇧↩ 排到接下来　写上时间（如 3:00）定时开始")
+            Text("↩ 立即开始　⇧↩ 排到接下来　写上时间（如 3pm）定时开始")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -52,12 +54,12 @@ struct QuickAddBar: View {
         .onChange(of: presentation.isWindowKey) {
             if !presentation.isWindowKey { isFocused = false }
         }
-        .onChange(of: presentation.focusRequest) { isFocused = true }
     }
 
     private var timePicker: some View {
         VStack(alignment: .leading, spacing: 12) {
             DatePicker("开始时间", selection: $pickedTime, in: Date.now..., displayedComponents: [.date, .hourAndMinute])
+                .environment(\.locale, Self.twelveHourLocale)
             Text("到点后当前任务会自动暂停并保留在返回路径。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -86,17 +88,9 @@ struct QuickAddBar: View {
     }
 
     private func submit() {
-        let text = trimmedTitle
-        guard !text.isEmpty else { return }
+        guard let entry = TaskStore.entry(for: title, queued: NSEvent.modifierFlags.contains(.shift)) else { return }
         title = ""
-
-        if let scheduled = ScheduleParser.parse(text), !scheduled.title.isEmpty {
-            store.schedule(scheduled.title, at: scheduled.date)
-        } else if NSEvent.modifierFlags.contains(.shift) {
-            store.enqueue(text)
-        } else {
-            store.interrupt(with: text)
-        }
+        store.add(entry)
         dismiss()
     }
 
@@ -105,6 +99,14 @@ struct QuickAddBar: View {
         isFocused = false
         presentation.relinquishKeyboard()
     }
+
+    /// The user's locale with the clock forced to 12 hours, so the picker shows AM/PM
+    /// like every other time in the app.
+    private static let twelveHourLocale: Locale = {
+        var components = Locale.Components(locale: .current)
+        components.hourCycle = .oneToTwelve
+        return Locale(components: components)
+    }()
 
     private static func nextHalfHour(after date: Date) -> Date {
         let step: TimeInterval = 30 * 60

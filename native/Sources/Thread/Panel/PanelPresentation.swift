@@ -24,8 +24,6 @@ final class PanelPresentation {
     /// True while a popover belonging to the panel is on screen; the pointer is over the
     /// popover then, not the panel, and the panel must not slide away beneath it.
     var isShowingPopover = false { didSet { reconsider() } }
-    /// Increments to ask the quick-add field to take keyboard focus.
-    private(set) var focusRequest = 0
     /// Hands keyboard focus back to the app the user was in. Set by the window controller.
     @ObservationIgnored var relinquishKeyboard: () -> Void = {}
 
@@ -47,12 +45,6 @@ final class PanelPresentation {
             seenStarts = store.scheduledStartCount
             self?.reveal(for: .seconds(6))
         }
-    }
-
-    /// Open the panel and put the cursor in the quick-add field (global shortcut).
-    func openForEntry() {
-        open()
-        focusRequest += 1
     }
 
     /// Show the panel for a while, then let the usual rules decide whether it stays.

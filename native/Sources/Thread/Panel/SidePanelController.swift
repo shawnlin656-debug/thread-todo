@@ -10,7 +10,6 @@ final class SidePanelController {
     private let panel: FloatingPanel
     private let presentation: PanelPresentation
     private var monitors: [Any] = []
-    private var hotKey: GlobalHotKey?
 
     init(store: TaskStore) {
         presentation = PanelPresentation(store: store)
@@ -42,14 +41,6 @@ final class SidePanelController {
             panel.orderOut(nil)
             panel.orderFrontRegardless()
         }
-
-        // ⌃⌥Space from anywhere: slide the panel out with the cursor ready in the quick-add field.
-        hotKey = GlobalHotKey(key: .space, modifiers: [.control, .option]) { [weak self] in
-            guard let self else { return }
-            self.panel.makeKeyAndOrderFront(nil)
-            self.presentation.openForEntry()
-        }
-        if hotKey == nil { NSLog("Thread: could not register the ⌃⌥Space shortcut; another app may own it.") }
 
         // Pointer position is needed even while other apps are active, hence the global monitor;
         // the local one covers the moments when this panel is the key window.

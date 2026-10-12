@@ -10,7 +10,7 @@ struct ThreadApp: App {
 
     var body: some Scene {
         MenuBarExtra("Thread", systemImage: "arrow.uturn.backward.circle") {
-            Text("添加任务：⌃⌥空格")
+            Button("添加任务…　⌃⌥空格") { delegate.quickEntry?.toggle() }
             Divider()
             Toggle("固定面板", isOn: Bindable(delegate.store).isPinned)
             // The two materials look different depending on what is behind the panel; let the user pick.
@@ -22,11 +22,12 @@ struct ThreadApp: App {
     }
 }
 
-/// Owns the store and the two floating windows for the lifetime of the app.
+/// Owns the store and the floating windows for the lifetime of the app.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let store = TaskStore()
     private var sidePanel: SidePanelController?
     private var notch: NotchController?
+    private(set) var quickEntry: QuickEntryController?
     private var autosave: Timer?
     private var ticker: Timer?
 
@@ -34,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         sidePanel = SidePanelController(store: store)
         notch = NotchController(store: store)
+        quickEntry = QuickEntryController(store: store)
 
         // Focus time lives in memory between actions; bank it regularly so a crash loses little.
         // Scheduled tasks are checked every second; missed ones start as soon as the app is running.

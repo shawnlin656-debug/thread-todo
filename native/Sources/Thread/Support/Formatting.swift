@@ -11,13 +11,15 @@ nonisolated enum Formatting {
             : String(format: "%02d:%02d", minutes, secs)
     }
 
-    /// Wall-clock time as 24-hour "HH:mm", regardless of the system's 12/24-hour setting.
+    /// Wall-clock time on a 12-hour clock, "3:00 PM", regardless of the system's 12/24-hour
+    /// setting, matching the am/pm form tasks are scheduled with.
     static func timeOfDay(_ date: Date) -> String {
         let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
+        let (hour, minute) = (parts.hour ?? 0, parts.minute ?? 0)
+        return String(format: "%d:%02d %@", hour % 12 == 0 ? 12 : hour % 12, minute, hour < 12 ? "AM" : "PM")
     }
 
-    /// A start time with its day when that is not today: "15:00" or "明天 09:30".
+    /// A start time with its day when that is not today: "3:00 PM" or "明天 9:30 AM".
     static func startTime(_ date: Date, now: Date = .now) -> String {
         let calendar = Calendar.current
         if calendar.isDate(date, inSameDayAs: now) { return timeOfDay(date) }
