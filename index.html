@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#dce7f6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121722" media="(prefers-color-scheme: dark)" />
+    <title>Thread — 不丢线的侧边 Todo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="desktop" aria-label="Thread 侧边待办演示">
+      <div class="wallpaper" aria-hidden="true">
+        <span class="ribbon ribbon-three"></span><span class="ribbon ribbon-one"></span><span class="ribbon ribbon-two"></span><span class="ribbon ribbon-four"></span>
+      </div>
+
+      <header class="mac-menu" aria-hidden="true">
+        <div class="mac-menu-left">
+          <svg viewBox="0 0 24 24"><path d="M16.7 12.6c0-2.5 2.1-3.7 2.2-3.8a4.8 4.8 0 0 0-3.8-2.1c-1.6-.2-3.2 1-4 .9-.9 0-2.2-.9-3.6-.9A5.2 5.2 0 0 0 3 9.4c-1.9 3.3-.5 8.2 1.4 10.9.9 1.3 2 2.8 3.5 2.7 1.4-.1 1.9-.9 3.6-.9 1.7 0 2.2.9 3.6.9 1.5 0 2.5-1.3 3.4-2.7 1.1-1.5 1.5-3 1.5-3.1-.1 0-3.3-1.3-3.3-4.6Zm-2.6-7.5A4.6 4.6 0 0 0 15.2 2a4.5 4.5 0 0 0-2.9 1.5 4.2 4.2 0 0 0-1.1 3c1.1.1 2.2-.5 2.9-1.4Z"/></svg>
+          <b>Thread Demo</b><span>文件</span><span>编辑</span><span>窗口</span>
+        </div>
+        <div class="mac-menu-right"><span>专注模式</span><span>9:41</span></div>
+      </header>
+
+      <div class="focus-island-wrap" id="focusIslandWrap">
+        <button class="focus-island" id="focusIsland" type="button" aria-expanded="false" aria-controls="focusPeek">
+          <span class="island-wing">
+            <span class="island-flip"><span class="island-track"><span class="island-line" id="islandCurrent">完成产品首页的信息架构</span><span class="island-line island-line-next" id="islandNext" aria-hidden="true"></span></span></span>
+          </span>
+          <span class="island-wing island-time">
+            <svg class="island-ring" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5"/><circle id="islandRing" cx="7" cy="7" r="5.5"/></svg>
+            <span id="islandTimer">36:24</span>
+          </span>
+        </button>
+        <div class="focus-peek" id="focusPeek" role="group" aria-label="接下来的任务"></div>
+      </div>
+      <div class="mac-notch" aria-hidden="true"><i></i></div>
+
+      <section class="desktop-window" aria-hidden="true">
+        <div class="window-titlebar"><div class="traffic-lights"><i></i><i></i><i></i></div><span>产品规划 — 备忘录</span></div>
+        <div class="window-content">
+          <aside><span class="sidebar-line active"></span><span class="sidebar-line"></span><span class="sidebar-line"></span><span class="sidebar-line short"></span></aside>
+          <article><p>今天</p><h1>首页信息架构</h1><div class="document-line wide"></div><div class="document-line"></div><div class="document-line medium"></div><div class="document-block"></div></article>
+        </div>
+      </section>
+
+      <nav class="mac-dock" aria-hidden="true">
+        <i class="dock-finder"></i><i class="dock-blue"></i><i class="dock-notes"></i><i class="dock-calendar">12</i><span></span><i class="dock-thread"></i>
+      </nav>
+
+      <aside class="thread-panel" id="threadPanel" data-glass>
+        <header class="panel-header">
+          <div class="brand"><span class="app-icon" aria-hidden="true"><i></i></span><div><b>Thread</b><small>保持工作连续</small></div></div>
+          <div class="header-actions">
+            <button class="icon-button" id="soundButton" aria-label="切换提示音" title="提示音"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="speaker" d="M5.8 9.2v5.6h3.4l4.4 3.5V5.7L9.2 9.2H5.8Z"/><path class="sound-wave" d="M17 8.5a5 5 0 0 1 0 7"/></svg></button>
+            <button class="icon-button" id="collapseButton" aria-label="收起面板" title="收起面板"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 7-5 5 5 5"/></svg></button>
+          </div>
+        </header>
+
+        <div class="panel-body">
+          <section class="now-section" aria-labelledby="nowLabel">
+            <div class="section-heading"><span id="nowLabel">正在进行</span><span class="focus-state"><i></i>专注中</span></div>
+            <article class="current-task" id="currentTask">
+              <div class="task-topline"><span class="task-type" id="currentType">深度工作</span><button class="more-button" aria-label="更多选项"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button></div>
+              <h2 id="currentTitle">完成产品首页的信息架构</h2>
+              <p id="currentNote">先梳理用户路径，再处理视觉细节。</p>
+              <div class="focus-meta"><div><span class="timer" id="timer">36:24</span><small>已专注</small></div><span class="started-at">09:42 开始</span></div>
+              <div class="task-actions">
+                <button class="primary-action" id="completeButton"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12.5 3.2 3.2L17.5 8"/></svg>完成</button>
+                <button class="secondary-action" id="pauseButton"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7v10M15 7v10"/></svg>稍后继续</button>
+              </div>
+            </article>
+          </section>
+
+          <section class="return-section" id="returnSection" aria-labelledby="returnLabel">
+            <div class="section-heading"><span id="returnLabel">返回路径</span><span id="returnCount">1 个待继续</span></div>
+            <div class="return-stack" id="returnStack">
+              <article class="return-card"><div class="thread-line"><i></i><span></span><b></b></div><div class="return-copy"><p>完成首页线框稿</p><span>12 分钟前被打断 · 进度 70%</span></div><button class="resume-button" data-resume="true">继续</button></article>
+            </div>
+          </section>
+
+          <section class="queue-section" aria-labelledby="queueLabel">
+            <div class="section-heading"><span id="queueLabel">接下来</span><button id="clearDoneButton">清理已完成</button></div>
+            <div class="queue-list" id="queueList">
+              <button class="queue-item" data-title="回复设计团队的评审意见" data-type="沟通"><span class="priority-dot urgent"><i>!</i></span><span class="queue-copy"><b>回复设计团队的评审意见</b><small>今天 · 10 分钟</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+              <button class="queue-item" data-title="整理下周迭代清单" data-type="规划"><span class="priority-dot"><i>2</i></span><span class="queue-copy"><b>整理下周迭代清单</b><small>今天 · 25 分钟</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+            </div>
+          </section>
+        </div>
+
+        <form class="quick-add" id="quickAddForm">
+          <div class="quick-add-shell">
+            <button type="button" class="add-symbol" id="addSymbol" aria-label="添加临时任务"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+            <input id="quickInput" autocomplete="off" placeholder="插入临时任务" aria-label="临时任务名称" />
+            <button type="submit" class="insert-button" id="insertButton">插队</button>
+          </div>
+          <p class="quick-help"><kbd>↵</kbd> 插队后，当前任务会保留在返回路径中</p>
+        </form>
+      </aside>
+
+      <button class="collapsed-rail" id="collapsedRail" data-glass aria-label="展开 Thread 面板"><span class="app-icon small" aria-hidden="true"><i></i></span><span class="rail-label">Thread</span><span class="rail-count" id="railCount">2</span></button>
+      <div class="toast" id="toast" data-glass role="status" aria-live="polite"><span class="toast-icon">↩</span><div><b id="toastTitle">临时任务已完成</b><p id="toastText">现在回到刚才的任务</p></div></div>
+    </main>
+    <script src="./glass.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
