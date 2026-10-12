@@ -21,6 +21,14 @@ final class PanelPresentation {
 
     /// True while the quick-add field has focus.
     var isEditing = false { didSet { reconsider() } }
+    /// True while a popover belonging to the panel is on screen; the pointer is over the
+    /// popover then, not the panel, and the panel must not slide away beneath it.
+    var isShowingPopover = false { didSet { reconsider() } }
+    /// Increments to ask the quick-add field to take keyboard focus.
+    private(set) var focusRequest = 0
+    /// Hands keyboard focus back to the app the user was in. Set by the window controller.
+    @ObservationIgnored var relinquishKeyboard: () -> Void = {}
+
     /// True while the panel's window receives keystrokes. Focus alone is not enough to hold the
     /// panel open: the field stays focused after the user has clicked away into another app.
     var isWindowKey = false { didSet { reconsider() } }
@@ -31,6 +39,29 @@ final class PanelPresentation {
         observe { [weak self] in
             _ = store.isPinned
             self?.reconsider()
+        }
+        // A scheduled task just took over: slide out for a moment so the switch is not missed.
+        var seenStarts = store.scheduledStartCount
+        observe { [weak self] in
+            guard store.scheduledStartCount != seenStarts else { return }
+            seenStarts = store.scheduledStartCount
+            self?.reveal(for: .seconds(6))
+        }
+    }
+
+    /// Open the panel and put the cursor in the quick-add field (global shortcut).
+    func openForEntry() {
+        open()
+        focusRequest += 1
+    }
+
+    /// Show the panel for a while, then let the usual rules decide whether it stays.
+    func reveal(for duration: Duration) {
+        open()
+        pending = Task {
+            try? await Task.sleep(for: duration)
+            guard !Task.isCancelled else { return }
+            reconsider()
         }
     }
 
@@ -58,7 +89,7 @@ final class PanelPresentation {
         pending?.cancel()
         // The panel never closes under the user's typing.
         let isTyping = isEditing && isWindowKey
-        let shouldBeOpen = store.isPinned || isTyping || isPointerInside || isPointerAtEdge
+        let shouldBeOpen = store.isPinned || isTyping || isShowingPopover || isPointerInside || isPointerAtEdge
         guard shouldBeOpen != isOpen else { return }
 
         // Pinning and typing act at once; pointer movement is debounced in both directions.

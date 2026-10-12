@@ -13,6 +13,8 @@ final class TaskStore {
     private(set) var interrupted: [TaskItem] = []
     /// Tasks planned for later, in order.
     private(set) var queue: [TaskItem] = []
+    /// Tasks waiting for a set start time, soonest first.
+    private(set) var scheduled: [TaskItem] = []
     /// Tasks completed and not yet cleared.
     private(set) var done: [TaskItem] = []
     /// Whether the side panel stays open instead of tucking into the screen edge.
@@ -23,6 +25,8 @@ final class TaskStore {
     /// Increments each time a task is parked by an interruption. The notch island watches
     /// this to flash the task the user will be returning to.
     private(set) var interruptionCount = 0
+    /// Increments each time a scheduled task takes over, so the panel can reveal itself.
+    private(set) var scheduledStartCount = 0
 
     private let fileURL: URL
 
@@ -56,6 +60,33 @@ final class TaskStore {
     func enqueue(_ title: String) {
         queue.append(TaskItem(title: title, type: Self.defaultType, addedAt: .now))
         save()
+    }
+
+    /// Add a task that takes over on its own at `date`.
+    func schedule(_ title: String, at date: Date) {
+        scheduled.append(TaskItem(title: title, type: "定时任务", scheduledAt: date, addedAt: .now))
+        scheduled.sort { ($0.scheduledAt ?? .distantFuture) < ($1.scheduledAt ?? .distantFuture) }
+        save()
+    }
+
+    /// Start a scheduled task ahead of its time.
+    func startScheduled(_ id: TaskItem.ID) {
+        guard let index = scheduled.firstIndex(where: { $0.id == id }) else { return }
+        focus(on: scheduled.remove(at: index))
+    }
+
+    /// Start every scheduled task whose time has come, pausing whatever is in progress.
+    ///
+    /// Called once a second. Several tasks due at once start in order, so the latest ends up
+    /// in focus and the earlier ones wait on the return path instead of being lost.
+    func startDueTasks(now: Date = .now) {
+        while let next = scheduled.first, let due = next.scheduledAt, due <= now {
+            scheduled.removeFirst()
+            var task = next
+            task.note = "定时 \(Formatting.timeOfDay(due)) 开始 · 之前的任务已保留在返回路径。"
+            focus(on: task)
+            scheduledStartCount += 1
+        }
     }
 
     /// Start a queued task now.
@@ -97,6 +128,7 @@ final class TaskStore {
     func delete(_ id: TaskItem.ID) {
         interrupted.removeAll { $0.id == id }
         queue.removeAll { $0.id == id }
+        scheduled.removeAll { $0.id == id }
         done.removeAll { $0.id == id }
         save()
     }
@@ -137,6 +169,8 @@ final class TaskStore {
         var interrupted: [TaskItem]
         var queue: [TaskItem]
         var done: [TaskItem]
+        /// Optional so files written before scheduling existed still load.
+        var scheduled: [TaskItem]?
         /// Optional so files written before pinning existed still load.
         var isPinned: Bool?
     }
@@ -158,7 +192,7 @@ final class TaskStore {
         // Bank the run in progress into the snapshot only; the live state keeps counting from `runningSince`.
         var running = current
         running?.accumulated = elapsed()
-        let snapshot = Snapshot(current: running, interrupted: interrupted, queue: queue, done: done, isPinned: isPinned)
+        let snapshot = Snapshot(current: running, interrupted: interrupted, queue: queue, done: done, scheduled: scheduled, isPinned: isPinned)
 
         do {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -181,6 +215,7 @@ final class TaskStore {
             interrupted = snapshot.interrupted
             queue = snapshot.queue
             done = snapshot.done
+            scheduled = snapshot.scheduled ?? []
             isPinned = snapshot.isPinned ?? false
             // Time the app spent closed is not focus time: the clock restarts from launch.
             runningSince = current == nil ? nil : .now

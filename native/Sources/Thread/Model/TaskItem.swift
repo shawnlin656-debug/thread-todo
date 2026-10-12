@@ -13,6 +13,8 @@ nonisolated struct TaskItem: Identifiable, Codable, Equatable, Sendable {
     /// Planned duration in minutes.
     var estimateMinutes: Int?
 
+    /// When the task should take over automatically; set only for scheduled tasks.
+    var scheduledAt: Date?
     var addedAt: Date?
     /// When the task first took focus.
     var startedAt: Date?

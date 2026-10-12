@@ -123,7 +123,14 @@ struct NotchIslandView: View {
                     detail: queued.estimateMinutes.map { "约 \($0) 分钟" } ?? "\(Formatting.ago(queued.addedAt))添加"
                 ) { store.startQueued(queued.id) }
             }
-            if store.returnTarget == nil && store.queue.isEmpty {
+            if let scheduled = store.scheduled.first, let date = scheduled.scheduledAt {
+                PeekRow(
+                    label: "定时 \(Formatting.startTime(date))",
+                    title: scheduled.title,
+                    detail: Formatting.until(date)
+                ) { store.startScheduled(scheduled.id) }
+            }
+            if store.returnTarget == nil && store.queue.isEmpty && store.scheduled.isEmpty {
                 Text("后面没有排队的任务。")
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.7))

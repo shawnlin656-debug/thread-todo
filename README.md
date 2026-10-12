@@ -27,6 +27,9 @@ open build/Thread.app
 
 Thread runs as a menu bar accessory with no Dock icon; quit it from its menu bar item. The side panel tucks into the right edge of the screen like an auto-hiding Dock: rest the pointer on the edge to slide it out, and pin it from the panel or the menu bar item to keep it open. Tasks are saved to `~/Library/Application Support/Thread/state.json`.
 
+- **⌃⌥Space** from any app slides the panel out with the cursor in the input field. Return starts the task, Shift-Return queues it, Escape cancels; either way the keyboard goes back to the app you were in.
+- **Scheduled tasks**: include a time in the text (`3:00 写周报`) or use the clock button. When the time comes, the current task is paused onto the return path and the scheduled one takes over. Hours 1 to 11 mean the next time the clock shows that hour, so at 2:25 pm, `3:00` is 3 pm today; write `15:00` or `9:30` with the date picker when you need to be exact.
+
 | Path | Purpose |
 | --- | --- |
 | `Sources/Thread/App` | App entry point, menu bar item, app delegate |

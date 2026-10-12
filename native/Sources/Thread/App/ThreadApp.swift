@@ -10,6 +10,8 @@ struct ThreadApp: App {
 
     var body: some Scene {
         MenuBarExtra("Thread", systemImage: "arrow.uturn.backward.circle") {
+            Text("添加任务：⌃⌥空格")
+            Divider()
             Toggle("固定面板", isOn: Bindable(delegate.store).isPinned)
             // The two materials look different depending on what is behind the panel; let the user pick.
             Toggle("Liquid Glass 材质（实验）", isOn: $useLiquidGlass)
@@ -26,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var sidePanel: SidePanelController?
     private var notch: NotchController?
     private var autosave: Timer?
+    private var ticker: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -33,6 +36,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notch = NotchController(store: store)
 
         // Focus time lives in memory between actions; bank it regularly so a crash loses little.
+        // Scheduled tasks are checked every second; missed ones start as soon as the app is running.
+        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [store] _ in
+            MainActor.assumeIsolated { store.startDueTasks() }
+        }
+        store.startDueTasks()
+
         autosave = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [store] _ in
             MainActor.assumeIsolated { store.save() }
         }

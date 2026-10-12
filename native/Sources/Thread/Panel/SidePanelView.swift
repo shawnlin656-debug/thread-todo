@@ -40,6 +40,10 @@ struct SidePanelView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     CurrentTaskSection()
+                    if !store.scheduled.isEmpty {
+                        Divider()
+                        ScheduledSection()
+                    }
                     Divider()
                     ReturnPathSection()
                     Divider()

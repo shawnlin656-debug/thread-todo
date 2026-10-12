@@ -51,6 +51,49 @@ private struct ReturnRow: View {
     }
 }
 
+/// Tasks with a set start time. Each takes over on its own when its time comes.
+struct ScheduledSection: View {
+    @Environment(TaskStore.self) private var store
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SectionHeading(title: "定时") { Text("到点自动切换") }
+            TimelineView(.everyMinute) { context in
+                VStack(spacing: 0) {
+                    ForEach(store.scheduled) { task in
+                        ScheduledRow(task: task, now: context.date)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct ScheduledRow: View {
+    @Environment(TaskStore.self) private var store
+    let task: TaskItem
+    let now: Date
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "clock")
+                .font(.title3)
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+            TaskRowText(
+                title: task.title,
+                detail: task.scheduledAt.map { "\(Formatting.startTime($0, now: now)) 开始 · \(Formatting.until($0, now: now))" } ?? ""
+            )
+            Spacer(minLength: 8)
+            Button("现在开始") { store.startScheduled(task.id) }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+        }
+        .rowHover()
+        .contextMenu { Button("删除", systemImage: "trash", role: .destructive) { store.delete(task.id) } }
+    }
+}
+
 /// The queue: tasks planned for later, followed by what has been completed.
 struct QueueSection: View {
     @Environment(TaskStore.self) private var store
