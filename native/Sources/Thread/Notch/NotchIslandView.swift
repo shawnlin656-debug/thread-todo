@@ -109,6 +109,10 @@ struct NotchIslandView: View {
 
     private var peek: some View {
         VStack(spacing: 0) {
+            if let current = store.current {
+                CurrentRow(title: current.title) { store.completeCurrent() }
+                Divider().overlay(.white.opacity(0.14)).padding(EdgeInsets(top: 4, leading: 10, bottom: 4, trailing: 10))
+            }
             if let returning = store.returnTarget {
                 PeekRow(
                     label: store.current == nil ? "待继续" : "完成后返回",
@@ -151,6 +155,36 @@ struct NotchIslandView: View {
             try? await Task.sleep(for: Self.flipHold)
             withAnimation(.smooth(duration: 0.45)) { isFlipped = false }
         }
+    }
+}
+
+/// The task in progress, with a button to mark it finished without opening the side panel.
+private struct CurrentRow: View {
+    let title: String
+    let complete: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("正在进行").font(.system(size: 11, weight: .medium)).foregroundStyle(.white.opacity(0.7))
+                Text(title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Button(action: complete) {
+                Label("完成", systemImage: "checkmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 6)
+                    .background(Color.accentColor.opacity(isHovered ? 1 : 0.85), in: .capsule)
+                    .contentShape(.capsule)
+            }
+            .buttonStyle(.plain)
+            .onHover { isHovered = $0 }
+            .help("完成当前任务")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
     }
 }
 

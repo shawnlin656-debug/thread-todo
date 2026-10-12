@@ -8,7 +8,7 @@ import SwiftUI
 final class NotchController {
     private enum Metrics {
         /// Room below the housing for the expanded peek.
-        static let height: CGFloat = 260
+        static let height: CGFloat = 320
         /// Transparent margin on each side so the drop shadow is not clipped.
         static let sideInset: CGFloat = 40
     }
