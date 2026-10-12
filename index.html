@@ -11,6 +11,7 @@
   </head>
   <body>
     <main class="desktop" aria-label="Thread 侧边待办演示">
+      <!-- Simulated macOS desktop: wallpaper, menu bar, a document window and the Dock. Decorative only. -->
       <div class="wallpaper" aria-hidden="true">
         <span class="ribbon ribbon-three"></span><span class="ribbon ribbon-one"></span><span class="ribbon ribbon-two"></span><span class="ribbon ribbon-four"></span>
       </div>
@@ -23,6 +24,8 @@
         <div class="mac-menu-right"><span>专注模式</span><span>9:41</span></div>
       </header>
 
+      <!-- Live Focus island: black wings on either side of the camera notch, with a peek panel that
+           opens below on hover or focus. The middle grid column stays empty for the hardware. -->
       <div class="focus-island-wrap" id="focusIslandWrap">
         <button class="focus-island" id="focusIsland" type="button" aria-expanded="false" aria-controls="focusPeek">
           <span class="island-wing">
@@ -49,6 +52,7 @@
         <i class="dock-finder"></i><i class="dock-blue"></i><i class="dock-notes"></i><i class="dock-calendar">12</i><span></span><i class="dock-thread"></i>
       </nav>
 
+      <!-- Thread side panel. [data-glass] marks a Liquid Glass surface; see glass.js. -->
       <aside class="thread-panel" id="threadPanel" data-glass>
         <header class="panel-header">
           <div class="brand"><span class="app-icon" aria-hidden="true"><i></i></span><div><b>Thread</b><small>保持工作连续</small></div></div>
@@ -60,46 +64,42 @@
 
         <div class="panel-body">
           <section class="now-section" aria-labelledby="nowLabel">
-            <div class="section-heading"><span id="nowLabel">正在进行</span><span class="focus-state"><i></i>专注中</span></div>
+            <div class="section-heading"><span id="nowLabel">正在进行</span><span class="focus-state" id="focusState"><i></i><span id="focusStateLabel">专注中</span></span></div>
             <article class="current-task" id="currentTask">
-              <div class="task-topline"><span class="task-type" id="currentType">深度工作</span><button class="more-button" aria-label="更多选项"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button></div>
+              <span class="task-type" id="currentType">深度工作</span>
               <h2 id="currentTitle">完成产品首页的信息架构</h2>
               <p id="currentNote">先梳理用户路径，再处理视觉细节。</p>
-              <div class="focus-meta"><div><span class="timer" id="timer">36:24</span><small>已专注</small></div><span class="started-at">09:42 开始</span></div>
+              <div class="focus-meta"><div><span class="timer" id="timer">36:24</span><small>已专注</small></div><span class="started-at" id="startedAt"></span></div>
               <div class="task-actions">
-                <button class="primary-action" id="completeButton"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12.5 3.2 3.2L17.5 8"/></svg>完成</button>
-                <button class="secondary-action" id="pauseButton"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7v10M15 7v10"/></svg>稍后继续</button>
+                <button class="primary-action" id="completeButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12.5 3.2 3.2L17.5 8"/></svg>完成</button>
+                <button class="secondary-action" id="pauseButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7v10M15 7v10"/></svg>稍后继续</button>
               </div>
             </article>
           </section>
 
           <section class="return-section" id="returnSection" aria-labelledby="returnLabel">
             <div class="section-heading"><span id="returnLabel">返回路径</span><span id="returnCount">1 个待继续</span></div>
-            <div class="return-stack" id="returnStack">
-              <article class="return-card"><div class="thread-line"><i></i><span></span><b></b></div><div class="return-copy"><p>完成首页线框稿</p><span>12 分钟前被打断 · 进度 70%</span></div><button class="resume-button" data-resume="true">继续</button></article>
-            </div>
+            <div class="return-stack" id="returnStack"></div>
           </section>
 
           <section class="queue-section" aria-labelledby="queueLabel">
-            <div class="section-heading"><span id="queueLabel">接下来</span><button id="clearDoneButton">清理已完成</button></div>
-            <div class="queue-list" id="queueList">
-              <button class="queue-item" data-title="回复设计团队的评审意见" data-type="沟通"><span class="priority-dot urgent"><i>!</i></span><span class="queue-copy"><b>回复设计团队的评审意见</b><small>今天 · 10 分钟</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
-              <button class="queue-item" data-title="整理下周迭代清单" data-type="规划"><span class="priority-dot"><i>2</i></span><span class="queue-copy"><b>整理下周迭代清单</b><small>今天 · 25 分钟</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
-            </div>
+            <div class="section-heading"><span id="queueLabel">接下来</span><button id="clearDoneButton" type="button" hidden>清理已完成</button></div>
+            <div class="queue-list" id="queueList"></div>
           </section>
         </div>
 
         <form class="quick-add" id="quickAddForm">
           <div class="quick-add-shell">
             <button type="button" class="add-symbol" id="addSymbol" aria-label="添加临时任务"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-            <input id="quickInput" autocomplete="off" placeholder="插入临时任务" aria-label="临时任务名称" />
+            <input id="quickInput" autocomplete="off" placeholder="插入临时任务" aria-label="临时任务名称" aria-describedby="quickHelp" />
             <button type="submit" class="insert-button" id="insertButton">插队</button>
           </div>
-          <p class="quick-help"><kbd>↵</kbd> 插队后，当前任务会保留在返回路径中</p>
+          <p class="quick-help" id="quickHelp"><kbd>↵</kbd> 插队，当前任务保留在返回路径 · <kbd>⇧↵</kbd> 排到接下来</p>
         </form>
       </aside>
 
-      <button class="collapsed-rail" id="collapsedRail" data-glass aria-label="展开 Thread 面板"><span class="app-icon small" aria-hidden="true"><i></i></span><span class="rail-label">Thread</span><span class="rail-count" id="railCount">2</span></button>
+      <!-- Collapsed state of the panel, and the transient confirmation toast. -->
+      <button class="collapsed-rail" type="button" id="collapsedRail" data-glass aria-label="展开 Thread 面板"><span class="app-icon small" aria-hidden="true"><i></i></span><span class="rail-label">Thread</span><span class="rail-count" id="railCount">2</span></button>
       <div class="toast" id="toast" data-glass role="status" aria-live="polite"><span class="toast-icon">↩</span><div><b id="toastTitle">临时任务已完成</b><p id="toastText">现在回到刚才的任务</p></div></div>
     </main>
     <script src="./glass.js"></script>

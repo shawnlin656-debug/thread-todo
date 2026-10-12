@@ -1,21 +1,44 @@
-// Liquid Glass material.
-// Refraction follows the approach in https://kube.io/blog/liquid-glass-css-svg/:
-// a squircle bezel profile is ray-traced with Snell's law into a displacement map,
-// which an SVG filter applies through backdrop-filter. Only Chromium accepts SVG
-// filters there, so other browsers keep the CSS blur declared in styles.css.
-// The specular rim is drawn from the same surface normals and works everywhere.
+/**
+ * Liquid Glass material.
+ *
+ * Refraction follows the approach in https://kube.io/blog/liquid-glass-css-svg/:
+ * a squircle bezel profile is ray-traced with Snell's law into a displacement map,
+ * which an SVG filter applies through backdrop-filter. Only Chromium accepts SVG
+ * filters there, so other browsers keep the CSS blur declared in styles.css.
+ * The specular rim is drawn from the same surface normals and works everywhere.
+ *
+ * Usage: give the element `data-glass` (styles.css supplies tint, shadow and the
+ * fallback blur), then call `Glass.attach(element, options)`. The element must be
+ * positioned and have a uniform border-radius.
+ */
+"use strict";
+
+/**
+ * @typedef {Object} GlassOptions
+ * @property {number} [bezel]    Width in px of the curved edge where refraction happens.
+ * @property {number} [depth]    Glass thickness in px; a deeper slab bends the backdrop further.
+ * @property {number} [blur]     Frosting, as a Gaussian standard deviation in px.
+ * @property {number} [saturate] Saturation multiplier applied to the refracted backdrop.
+ */
+
 const Glass = (() => {
   const SVG_NS = "http://www.w3.org/2000/svg";
+  /** Index of refraction of glass; air is 1. */
   const IOR = 1.5;
+  /** Resolution of the 1D refraction lookup across the bezel. */
   const PROFILE_SAMPLES = 128;
+  /** Unit vector from the surface toward the light, in screen space (upper left). */
   const TO_LIGHT = { x: -0.6, y: -0.8 };
+  /** @type {Required<GlassOptions>} */
   const DEFAULTS = { bezel: 18, depth: 20, blur: 10, saturate: 1.6 };
 
   const canRefract = /Chrom(e|ium)\//.test(navigator.userAgent) && CSS.supports("backdrop-filter", "url(#glass)");
+  /** Per-element bookkeeping: options, the shine layer, last rendered size, current filter. */
   const hosts = new Map();
   let defs;
   let sequence = 0;
 
+  /** @returns {SVGDefsElement} The shared, lazily created container for generated filters. */
   function filterDefs() {
     if (defs) return defs;
     const svg = document.createElementNS(SVG_NS, "svg");
@@ -26,10 +49,19 @@ const Glass = (() => {
     return defs;
   }
 
-  // Convex squircle: height of the glass surface from the outer edge (t = 0) to the flat interior (t = 1).
+  /**
+   * Convex squircle: height of the glass surface from the outer edge (t = 0) to the flat interior (t = 1).
+   * @param {number} t
+   * @returns {number} Height in the range 0–1.
+   */
   const surface = (t) => Math.pow(1 - Math.pow(1 - t, 4), 0.25);
 
-  // How far, in px, a vertical ray lands from its entry point at each step across the bezel.
+  /**
+   * How far, in px, a vertical ray lands from its entry point at each step across the bezel.
+   * @param {number} bezel
+   * @param {number} depth
+   * @returns {Float32Array} Displacement per sample, outer edge first.
+   */
   function refractionProfile(bezel, depth) {
     const slab = depth * 0.6;
     const profile = new Float32Array(PROFILE_SAMPLES);
@@ -44,7 +76,16 @@ const Glass = (() => {
     return profile;
   }
 
-  // Signed distance to a rounded rectangle: depth inside the shape plus the outward normal.
+  /**
+   * Nearest-edge query for a rounded rectangle.
+   * @param {number} x
+   * @param {number} y
+   * @param {number} width
+   * @param {number} height
+   * @param {number} radius
+   * @returns {{inside: number, nx: number, ny: number}} Depth inside the shape in px (negative
+   *   outside) and the outward unit normal of the nearest edge.
+   */
   function edge(x, y, width, height, radius) {
     const cx = x - width / 2;
     const cy = y - height / 2;
@@ -59,6 +100,10 @@ const Glass = (() => {
     return qx > qy ? { inside: radius - qx, nx: sx, ny: 0 } : { inside: radius - qy, nx: 0, ny: sy };
   }
 
+  /**
+   * Encode the refraction as an image: red and green hold the x and y offsets, 128 is neutral.
+   * @returns {{url: string, scale: number}} PNG data URL and the matching feDisplacementMap scale.
+   */
   function displacementMap(width, height, radius, bezel, depth) {
     const profile = refractionProfile(bezel, depth);
     const reach = Math.max(...profile);
@@ -87,6 +132,10 @@ const Glass = (() => {
     return { url: canvas.toDataURL(), scale: (reach * 255) / 127 };
   }
 
+  /**
+   * Draw the rim highlight as a white image whose alpha follows how each edge faces the light.
+   * @returns {string} PNG data URL at device resolution (capped at 2x).
+   */
   function specularMap(width, height, radius, bezel) {
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
     const rim = 1.4;
@@ -113,6 +162,10 @@ const Glass = (() => {
     return canvas.toDataURL();
   }
 
+  /**
+   * Rebuild the shine and, where supported, the refraction filter. No-op if the size is unchanged.
+   * @param {HTMLElement} host
+   */
   function render(host) {
     const entry = hosts.get(host);
     const width = host.offsetWidth;
@@ -145,10 +198,16 @@ const Glass = (() => {
     entry.filter = filter;
   }
 
+  // Both maps are baked for an exact pixel size, so every resize needs a rebuild.
   const resizes = new ResizeObserver((entries) => {
     for (const { target } of entries) requestAnimationFrame(() => render(target));
   });
 
+  /**
+   * Turn an element into a glass surface and keep it in sync with its size.
+   * @param {HTMLElement} host
+   * @param {GlassOptions} [options]
+   */
   function attach(host, options = {}) {
     const shine = document.createElement("span");
     shine.className = "glass-shine";
