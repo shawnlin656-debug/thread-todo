@@ -1,6 +1,11 @@
 # Thread
 
-A side-panel todo for macOS that keeps your place when work gets interrupted. This repository is a static web demo of the interaction and visual design; it is not yet a native app.
+A side-panel todo for macOS that keeps your place when work gets interrupted.
+
+The repository holds two implementations of the same design:
+
+- **`native/`** is the macOS app, written in SwiftUI. It floats at the edge of the screen above other apps and puts the current task beside the MacBook camera notch.
+- **The repository root** is the original static web demo used to work out the interaction and visual design.
 
 ## What it does
 
@@ -10,7 +15,31 @@ A side-panel todo for macOS that keeps your place when work gets interrupted. Th
 - **Liquid Glass panel.** The side panel uses real edge refraction (an SVG displacement map derived from Snell's law) and a normal-based specular rim.
 - Follows the system light or dark appearance, respects reduced motion and reduced transparency, and saves state to `localStorage`.
 
-## Run it
+## macOS app
+
+Requires macOS 26 and the Xcode Command Line Tools (full Xcode is not needed).
+
+```sh
+cd native
+./scripts/build-app.sh      # produces native/build/Thread.app
+open build/Thread.app
+```
+
+Thread runs as a menu bar accessory with no Dock icon; quit it from its menu bar item. Tasks are saved to `~/Library/Application Support/Thread/state.json`.
+
+| Path | Purpose |
+| --- | --- |
+| `Sources/Thread/App` | App entry point, menu bar item, app delegate |
+| `Sources/Thread/Model` | `TaskItem` and `TaskStore` (state, actions, persistence) |
+| `Sources/Thread/Panel` | The floating side panel and its sections |
+| `Sources/Thread/Notch` | Notch geometry detection and the Live Focus island |
+| `Sources/Thread/Support` | Floating window class and text formatting |
+
+The side panel uses the system Liquid Glass material. The island reads the notch position from `NSScreen` at run time, so it fits whichever MacBook it runs on; on a display without a notch it hangs from the top centre of the menu bar.
+
+The build is ad-hoc signed, so it runs on the Mac that built it but is not ready to distribute.
+
+## Web demo
 
 No build step. Serve the folder with any static server and open it:
 
@@ -21,7 +50,7 @@ python3 -m http.server 4173
 
 Append `?reset` to the URL to restore the sample tasks.
 
-## Files
+### Files
 
 | File | Purpose |
 | --- | --- |
@@ -31,7 +60,7 @@ Append `?reset` to the URL to restore the sample tasks.
 | `glass.js` | Liquid Glass material (refraction and specular rim) |
 | `PRODUCT.md` | Product intent and design principles |
 
-## Limitations
+### Limitations of the web demo
 
 - Edge refraction needs a Chromium-based browser. Safari and Firefox fall back to a plain backdrop blur with the same highlight.
 - The notch is a fixed 184 × 32 pt mock. Matching a specific MacBook requires `NSScreen` safe-area data, which only a native app can read.

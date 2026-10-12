@@ -1,0 +1,4 @@
+# SwiftPM and app bundle output
+native/.build/
+native/build/
+.DS_Store
