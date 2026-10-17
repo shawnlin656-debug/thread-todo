@@ -137,6 +137,19 @@ final class TaskStore {
         save()
     }
 
+    /// Undo a completion by working on the task again right away; its focus time carries on.
+    func reopenAndStart(_ id: TaskItem.ID) {
+        guard let task = takeFromDone(id) else { return }
+        focus(on: task)
+    }
+
+    /// Undo a completion by putting the task back at the front of the queue.
+    func reopenToQueue(_ id: TaskItem.ID) {
+        guard let task = takeFromDone(id) else { return }
+        queue.insert(task, at: 0)
+        save()
+    }
+
     /// Remove a task from whichever waiting list holds it.
     func delete(_ id: TaskItem.ID) {
         interrupted.removeAll { $0.id == id }
@@ -149,6 +162,14 @@ final class TaskStore {
     func clearDone() {
         done.removeAll()
         save()
+    }
+
+    /// Pull a task out of the completed list and clear its completion.
+    private func takeFromDone(_ id: TaskItem.ID) -> TaskItem? {
+        guard let index = done.firstIndex(where: { $0.id == id }) else { return nil }
+        var task = done.remove(at: index)
+        task.completedAt = nil
+        return task
     }
 
     /// Give `task` the focus, parking whatever was in progress so it can be resumed.

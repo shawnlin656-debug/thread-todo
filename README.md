@@ -28,7 +28,7 @@ open build/Thread.app
 Thread runs as a menu bar accessory with no Dock icon; quit it from its menu bar item. The side panel tucks into the right edge of the screen like an auto-hiding Dock: rest the pointer on the edge to slide it out, and pin it from the panel or the menu bar item to keep it open. Tasks are saved to `~/Library/Application Support/Thread/state.json`.
 
 - **⌃⌥Space** from any app brings up a Spotlight-style entry bar in the middle of the screen. Return starts the task, Shift-Return queues it, Escape or a click elsewhere dismisses it; either way the keyboard goes back to the app you were in. A line under the field shows what Return will do with the text so far.
-- **Swipe to act** (native app): with the pointer on a row, swipe two fingers right to resume or start it, left to mark it done. On the current task, right sets it aside and left finishes it. Right-click offers the same actions for mouse users.
+- **Swipe to act** (native app): with the pointer on a row, swipe two fingers right to resume or start it, left to mark it done. On the current task, right sets it aside and left finishes it. On a completed task, right works on it again and left puts it back at the front of the queue, so a mis-swipe is undone the same way. Right-click offers the same actions for mouse users.
 - **Scheduled tasks**: include a time in the text (`3pm 写周报`, `写周报 3:30 PM`, `写周报 630pm`) or use the clock button in the side panel. When the time comes, the current task is paused onto the return path and the scheduled one takes over. Times are shown on a 12-hour clock. A time typed without am/pm (`3:00`) means the next time the clock shows that hour, so at 2:25 pm it is 3 pm today; add am or pm to be exact.
 
 | Path | Purpose |

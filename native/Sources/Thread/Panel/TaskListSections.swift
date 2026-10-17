@@ -157,6 +157,7 @@ private struct QueueRow: View {
     }
 }
 
+/// A completed task. Swiping undoes the completion: right works on it again, left puts it back in the queue.
 private struct DoneRow: View {
     @Environment(TaskStore.self) private var store
     let task: TaskItem
@@ -171,10 +172,18 @@ private struct DoneRow: View {
                 isStruckThrough: true
             )
             Spacer(minLength: 8)
+            SwipeHint(right: "继续", left: "放回队列")
         }
         .foregroundStyle(.secondary)
         .rowHover()
-        .contextMenu { Button("删除", systemImage: "trash", role: .destructive) { store.delete(task.id) } }
+        // A mis-swiped completion is undone the same way it happened.
+        .swipeActions(right: .resume { store.reopenAndStart(task.id) }, left: .requeue { store.reopenToQueue(task.id) })
+        .contextMenu {
+            Button("继续", systemImage: "play") { store.reopenAndStart(task.id) }
+            Button("放回队列", systemImage: "arrow.uturn.up") { store.reopenToQueue(task.id) }
+            Divider()
+            Button("删除", systemImage: "trash", role: .destructive) { store.delete(task.id) }
+        }
     }
 }
 
@@ -191,7 +200,7 @@ private struct WaitingTaskMenu: View {
 }
 
 /// The swipe actions, worded and coloured the same everywhere: right moves a task into or
-/// out of focus, left finishes it.
+/// out of focus, left finishes it (or, on a finished task, puts it back in the queue).
 extension SwipeAction {
     static func resume(_ perform: @escaping () -> Void) -> SwipeAction {
         SwipeAction(title: "继续", systemImage: "play.fill", tint: .accentColor, perform: perform)
@@ -203,6 +212,10 @@ extension SwipeAction {
 
     static func pause(_ perform: @escaping () -> Void) -> SwipeAction {
         SwipeAction(title: "稍后继续", systemImage: "pause.fill", tint: .orange, perform: perform)
+    }
+
+    static func requeue(_ perform: @escaping () -> Void) -> SwipeAction {
+        SwipeAction(title: "放回队列", systemImage: "arrow.uturn.up", tint: .indigo, perform: perform)
     }
 
     static func complete(_ perform: @escaping () -> Void) -> SwipeAction {
