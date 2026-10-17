@@ -115,7 +115,7 @@ struct NotchIslandView: View {
             }
             if let returning = store.returnTarget {
                 PeekRow(
-                    label: store.current == nil ? "待继续" : "完成后返回",
+                    label: "返回路径",
                     title: returning.title,
                     detail: "\(Formatting.ago(returning.interruptedAt))被打断"
                 ) { store.resume(returning.id) }

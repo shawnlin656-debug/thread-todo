@@ -31,7 +31,7 @@ final class TaskStore {
     private let fileURL: URL
 
     static let defaultType = "临时任务"
-    static let interruptNote = "临时插队 · 完成后会自动回到上一件事。"
+    static let interruptNote = "临时插队 · 被打断的任务留在返回路径，随时右滑继续。"
 
     init(fileURL: URL = TaskStore.defaultFileURL) {
         self.fileURL = fileURL
@@ -105,15 +105,28 @@ final class TaskStore {
         save()
     }
 
-    /// Finish the current task and fall back to the most recently interrupted one, if any.
+    /// Finish the current task and leave the app idle.
+    ///
+    /// The next task is deliberately not started: the user picks what to pick up from the
+    /// return path or the queue, rather than being dropped into it.
     func completeCurrent() {
         guard var finished = current else { return }
         finished.accumulated = elapsed()
         finished.completedAt = .now
         done.insert(finished, at: 0)
+        current = nil
+        runningSince = nil
+        save()
+    }
 
-        current = interrupted.isEmpty ? nil : interrupted.removeFirst()
-        runningSince = current == nil ? nil : .now
+    /// Mark a waiting task (return path, queue or scheduled) finished without switching to it.
+    func complete(_ id: TaskItem.ID) {
+        guard var task = (interrupted + queue + scheduled).first(where: { $0.id == id }) else { return }
+        interrupted.removeAll { $0.id == id }
+        queue.removeAll { $0.id == id }
+        scheduled.removeAll { $0.id == id }
+        task.completedAt = .now
+        done.insert(task, at: 0)
         save()
     }
 

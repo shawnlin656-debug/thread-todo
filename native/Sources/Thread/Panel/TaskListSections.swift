@@ -42,12 +42,14 @@ private struct ReturnRow: View {
                 detail: "\(Formatting.ago(task.interruptedAt, now: now))被打断 · 已专注 \(Formatting.clock(task.accumulated))"
             )
             Spacer(minLength: 8)
-            Button("继续") { store.resume(task.id) }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            SwipeHint(right: "继续", left: "完成")
         }
         .rowHover()
-        .contextMenu { Button("删除", systemImage: "trash", role: .destructive) { store.delete(task.id) } }
+        .swipeActions(right: .resume { store.resume(task.id) }, left: .complete { store.complete(task.id) })
+        .contextMenu {
+            Button("继续", systemImage: "play") { store.resume(task.id) }
+            WaitingTaskMenu(id: task.id)
+        }
     }
 }
 
@@ -85,12 +87,14 @@ private struct ScheduledRow: View {
                 detail: task.scheduledAt.map { "\(Formatting.startTime($0, now: now)) 开始 · \(Formatting.until($0, now: now))" } ?? ""
             )
             Spacer(minLength: 8)
-            Button("现在开始") { store.startScheduled(task.id) }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            SwipeHint(right: "现在开始", left: "完成")
         }
         .rowHover()
-        .contextMenu { Button("删除", systemImage: "trash", role: .destructive) { store.delete(task.id) } }
+        .swipeActions(right: .start { store.startScheduled(task.id) }, left: .complete { store.complete(task.id) })
+        .contextMenu {
+            Button("现在开始", systemImage: "play") { store.startScheduled(task.id) }
+            WaitingTaskMenu(id: task.id)
+        }
     }
 }
 
@@ -124,7 +128,7 @@ struct QueueSection: View {
     }
 }
 
-/// A queued task. Clicking anywhere on the row starts it.
+/// A queued task. Swipe right to start it, left to mark it done.
 private struct QueueRow: View {
     @Environment(TaskStore.self) private var store
     let task: TaskItem
@@ -132,26 +136,24 @@ private struct QueueRow: View {
     let now: Date
 
     var body: some View {
-        Button {
-            store.startQueued(task.id)
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "\(min(position, 50)).circle")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-                TaskRowText(
-                    title: task.title,
-                    detail: task.estimateMinutes.map { "约 \($0) 分钟" } ?? "\(Formatting.ago(task.addedAt, now: now))添加"
-                )
-                Spacer(minLength: 8)
-                Image(systemName: "play.fill").font(.caption).foregroundStyle(.tertiary)
-            }
-            .rowHover()
+        HStack(spacing: 10) {
+            Image(systemName: "\(min(position, 50)).circle")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            TaskRowText(
+                title: task.title,
+                detail: task.estimateMinutes.map { "约 \($0) 分钟" } ?? "\(Formatting.ago(task.addedAt, now: now))添加"
+            )
+            Spacer(minLength: 8)
+            SwipeHint(right: "开始", left: "完成")
         }
-        .buttonStyle(.plain)
-        .help("现在开始这个任务")
-        .contextMenu { Button("删除", systemImage: "trash", role: .destructive) { store.delete(task.id) } }
+        .rowHover()
+        .swipeActions(right: .start { store.startQueued(task.id) }, left: .complete { store.complete(task.id) })
+        .contextMenu {
+            Button("现在开始", systemImage: "play") { store.startQueued(task.id) }
+            WaitingTaskMenu(id: task.id)
+        }
     }
 }
 
@@ -173,6 +175,38 @@ private struct DoneRow: View {
         .foregroundStyle(.secondary)
         .rowHover()
         .contextMenu { Button("删除", systemImage: "trash", role: .destructive) { store.delete(task.id) } }
+    }
+}
+
+/// Right-click fallback for the swipes, shared by every waiting row.
+private struct WaitingTaskMenu: View {
+    @Environment(TaskStore.self) private var store
+    let id: TaskItem.ID
+
+    var body: some View {
+        Button("完成", systemImage: "checkmark") { store.complete(id) }
+        Divider()
+        Button("删除", systemImage: "trash", role: .destructive) { store.delete(id) }
+    }
+}
+
+/// The swipe actions, worded and coloured the same everywhere: right moves a task into or
+/// out of focus, left finishes it.
+extension SwipeAction {
+    static func resume(_ perform: @escaping () -> Void) -> SwipeAction {
+        SwipeAction(title: "继续", systemImage: "play.fill", tint: .accentColor, perform: perform)
+    }
+
+    static func start(_ perform: @escaping () -> Void) -> SwipeAction {
+        SwipeAction(title: "开始", systemImage: "play.fill", tint: .accentColor, perform: perform)
+    }
+
+    static func pause(_ perform: @escaping () -> Void) -> SwipeAction {
+        SwipeAction(title: "稍后继续", systemImage: "pause.fill", tint: .orange, perform: perform)
+    }
+
+    static func complete(_ perform: @escaping () -> Void) -> SwipeAction {
+        SwipeAction(title: "完成", systemImage: "checkmark", tint: .green, perform: perform)
     }
 }
 

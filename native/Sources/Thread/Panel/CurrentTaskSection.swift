@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The task in focus, its running clock, and the two ways to leave it. With nothing in
-/// focus it shows the idle prompt and disables both actions.
+/// The task in focus and its running clock. Swiping the card right sets the task aside,
+/// left finishes it; right-click offers the same. With nothing in focus it shows the idle prompt.
 struct CurrentTaskSection: View {
     @Environment(TaskStore.self) private var store
 
@@ -28,7 +28,7 @@ struct CurrentTaskSection: View {
                 Text(task?.title ?? "选择下一件最重要的事")
                     .font(.title3.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
-                if let note = task == nil ? "从下方队列中选择，或添加一个新任务。" : task?.note {
+                if let note = task == nil ? "在返回路径或队列里右滑一个任务继续，或添加新任务。" : task?.note {
                     Text(note).font(.callout).foregroundStyle(.secondary)
                 }
             }
@@ -49,19 +49,23 @@ struct CurrentTaskSection: View {
                 }
             }
 
-            HStack(spacing: 8) {
-                Button { store.completeCurrent() } label: {
-                    Label("完成", systemImage: "checkmark").frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button { store.pauseCurrent() } label: {
-                    Label("稍后继续", systemImage: "pause").frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
+            if task != nil {
+                // Always visible here, unlike the rows' hover hints: the card has no buttons left to discover.
+                Text("\(Image(systemName: "arrow.right")) 稍后继续　\(Image(systemName: "arrow.left")) 完成　双指滑动卡片")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             }
-            .controlSize(.large)
-            .disabled(task == nil)
+        }
+        .contentShape(.rect)
+        .swipeActions(
+            right: task == nil ? nil : .pause { store.pauseCurrent() },
+            left: task == nil ? nil : .complete { store.completeCurrent() }
+        )
+        .contextMenu {
+            if task != nil {
+                Button("完成", systemImage: "checkmark") { store.completeCurrent() }
+                Button("稍后继续", systemImage: "pause") { store.pauseCurrent() }
+            }
         }
         .animation(.easeOut(duration: 0.22), value: task?.id)
     }

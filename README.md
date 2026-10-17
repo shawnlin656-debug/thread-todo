@@ -9,7 +9,7 @@ The repository holds two implementations of the same design:
 
 ## What it does
 
-- **Interrupt without losing the thread.** Typing a task and pressing Enter starts it immediately. The task you were on moves to the *return path* and comes back automatically when the interruption is completed.
+- **Interrupt without losing the thread.** Typing a task and pressing Enter starts it immediately. The task you were on moves to the *return path* and waits there; finishing the interruption leaves you idle so you choose what to pick up next.
 - **Queue for later.** Shift+Enter adds a task to the queue without touching your current focus.
 - **Live Focus island.** The current task and its timer sit on either side of the MacBook camera notch. Hovering shows what comes next, and the left wing periodically flips to preview it.
 - **Liquid Glass panel.** The side panel uses real edge refraction (an SVG displacement map derived from Snell's law) and a normal-based specular rim.
@@ -28,6 +28,7 @@ open build/Thread.app
 Thread runs as a menu bar accessory with no Dock icon; quit it from its menu bar item. The side panel tucks into the right edge of the screen like an auto-hiding Dock: rest the pointer on the edge to slide it out, and pin it from the panel or the menu bar item to keep it open. Tasks are saved to `~/Library/Application Support/Thread/state.json`.
 
 - **⌃⌥Space** from any app brings up a Spotlight-style entry bar in the middle of the screen. Return starts the task, Shift-Return queues it, Escape or a click elsewhere dismisses it; either way the keyboard goes back to the app you were in. A line under the field shows what Return will do with the text so far.
+- **Swipe to act** (native app): with the pointer on a row, swipe two fingers right to resume or start it, left to mark it done. On the current task, right sets it aside and left finishes it. Right-click offers the same actions for mouse users.
 - **Scheduled tasks**: include a time in the text (`3pm 写周报`, `写周报 3:30 PM`, `写周报 630pm`) or use the clock button in the side panel. When the time comes, the current task is paused onto the return path and the scheduled one takes over. Times are shown on a 12-hour clock. A time typed without am/pm (`3:00`) means the next time the clock shows that hour, so at 2:25 pm it is 3 pm today; add am or pm to be exact.
 
 | Path | Purpose |
